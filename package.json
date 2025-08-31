@@ -1,0 +1,18 @@
+{
+  "private": true,
+  "name": "@roseal/http-client",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@biomejs/biome": "2.2.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "json-bigint-native": "1.2.0",
+    "parse-roblox-errors": "1.1.10",
+    "roblox-bat": "0.6.0"
+  }
+}
