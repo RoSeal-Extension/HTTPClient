@@ -11,12 +11,6 @@ import {
 	type ParsedChallenge,
 } from "parse-roblox-errors";
 import type { HBAClient } from "roblox-bat";
-import { canParseURL, filterObject } from "../utils.ts";
-import {
-	HTTPResponse,
-	type AnyHTTPRequest,
-	type CamelizeObjectFn,
-} from "./HTTPResponse.ts";
 import {
 	CSRF_TOKEN_HEADER_NAME,
 	DEFAULT_ACCOUNT_ID,
@@ -27,6 +21,12 @@ import {
 	RETRY_ERROR_CODES,
 	USER_AGENT_HEADER_NAME,
 } from "../constants.ts";
+import { canParseURL, filterObject } from "../utils.ts";
+import {
+	HTTPResponse,
+	type AnyHTTPRequest,
+	type CamelizeObjectFn,
+} from "./HTTPResponse.ts";
 import { RESTError } from "./RESTError.ts";
 
 export type HTTPMethod =
@@ -225,6 +225,115 @@ export default class HTTPClient<T extends string = string> {
 		return newHeaders;
 	}
 
+	public formatRequestUrl(request: AnyHTTPRequest<T>, protocol = "https"): URL {
+		if (request.url.includes(this._options.domains.cdn)) {
+			return canParseURL(request.url)
+				? new URL(request.url)
+				: new URL(
+						`${protocol}://${request.url.replace(REMOVE_PROTOCOL_REGEX, "")}`,
+					);
+		}
+		const url = request.url;
+		let search = request.search ?? new URLSearchParams();
+		if (search && !(search instanceof URLSearchParams)) {
+			// Filter undefined & null values
+			search = new URLSearchParams(
+				filterObject(search) as Record<string, string>,
+			);
+		}
+
+		if (request.overrideDeviceType) {
+			if (this._options.overrideDeviceTypeHeaderName) {
+				search.set(
+					this._options.overrideDeviceTypeHeaderName,
+					request.overrideDeviceType,
+				);
+			}
+		} else if (this._options.trackingSearchParam) {
+			search.set(this._options.trackingSearchParam, "");
+		}
+
+		const formattedUrl =
+			url.startsWith("/") || (canParseURL(url) && !url.startsWith("localhost:"))
+				? new URL(url, location.href)
+				: new URL(`${protocol}://${url.replace(REMOVE_PROTOCOL_REGEX, "")}`);
+		for (const [key, value] of search) {
+			formattedUrl.searchParams.append(key, value);
+		}
+
+		// Force http if requesting localhost
+		if (
+			formattedUrl.hostname === "localhost" &&
+			formattedUrl.protocol === "https:"
+		) {
+			formattedUrl.protocol = "http:";
+		}
+
+		return formattedUrl;
+	}
+
+	public formatBody(body: HTTPRequestBodyContent): {
+		body: string | URLSearchParams | Uint8Array | FormData | BodyInit;
+		type?: string;
+	} {
+		let newBody:
+			| string
+			| URLSearchParams
+			| Uint8Array
+			| FormData
+			| BodyInit
+			| undefined;
+		let contentType: string | undefined;
+
+		switch (body.type) {
+			case "formdata": {
+				const formdata = new FormData();
+				for (const name in body.value) {
+					const value = body.value[name] as FormDataSetRequest;
+
+					value.fileName
+						? formdata.set(name, value.value as Blob, value.fileName)
+						: formdata.set(name, value.value);
+				}
+				newBody = formdata;
+				break;
+			}
+
+			case "json": {
+				newBody = JSON.stringify(body.value);
+				contentType = "application/json";
+				break;
+			}
+
+			case "urlencoded": {
+				newBody = new URLSearchParams(body.value);
+				contentType = "application/x-www-form-urlencoded";
+				break;
+			}
+
+			case "unknown": {
+				newBody = body.value as BodyInit;
+				break;
+			}
+
+			case "jsonWithBigInts": {
+				newBody = JSONv2.stringify(body.value);
+				contentType = "application/json";
+				break;
+			}
+
+			default: {
+				newBody = body.value;
+				break;
+			}
+		}
+
+		return {
+			body: newBody,
+			type: contentType,
+		};
+	}
+
 	public async _httpRequest<U = unknown>(
 		request: InternalHTTPRequest<T>,
 	): Promise<HTTPResponse<U>> {
@@ -275,6 +384,19 @@ export default class HTTPClient<T extends string = string> {
 			undefined,
 			this._options.camelizeObject,
 		);
+	}
+
+	public parseRatelimitHeaders(headers: Headers): Ratelimit | undefined {
+		if (!headers.has(RATELIMIT_LIMIT_HEADER)) return;
+
+		return {
+			_limit: headers.get(RATELIMIT_LIMIT_HEADER) as string,
+			remaining: Number.parseInt(
+				headers.get(RATELIMIT_REMAINING_HEADER) as string,
+				10,
+			),
+			reset: Number.parseInt(headers.get(RATELIMIT_RESET_HEADER) as string, 10),
+		};
 	}
 
 	public async httpRequest<U = unknown>(
@@ -416,131 +538,6 @@ export default class HTTPClient<T extends string = string> {
 				this._options.camelizeObject,
 			);
 		}
-	}
-
-	public formatRequestUrl(request: AnyHTTPRequest<T>, protocol = "https"): URL {
-		if (request.url.includes(this._options.domains.cdn)) {
-			return canParseURL(request.url)
-				? new URL(request.url)
-				: new URL(
-						`${protocol}://${request.url.replace(REMOVE_PROTOCOL_REGEX, "")}`,
-					);
-		}
-		const url = request.url;
-		let search = request.search ?? new URLSearchParams();
-		if (search && !(search instanceof URLSearchParams)) {
-			// Filter undefined & null values
-			search = new URLSearchParams(
-				filterObject(search) as Record<string, string>,
-			);
-		}
-
-		if (request.overrideDeviceType) {
-			if (this._options.overrideDeviceTypeHeaderName) {
-				search.set(
-					this._options.overrideDeviceTypeHeaderName,
-					request.overrideDeviceType,
-				);
-			}
-		} else if (this._options.trackingSearchParam) {
-			search.set(this._options.trackingSearchParam, "");
-		}
-
-		const formattedUrl =
-			url.startsWith("/") ||
-			(canParseURL(url) &&
-				(!import.meta.env.IS_DEV || !url.startsWith("localhost:")))
-				? new URL(url, location.href)
-				: new URL(`${protocol}://${url.replace(REMOVE_PROTOCOL_REGEX, "")}`);
-		for (const [key, value] of search) {
-			formattedUrl.searchParams.append(key, value);
-		}
-
-		// Force http if requesting localhost
-		if (
-			import.meta.env.IS_DEV &&
-			formattedUrl.hostname === "localhost" &&
-			formattedUrl.protocol === "https:"
-		) {
-			formattedUrl.protocol = "http:";
-		}
-
-		return formattedUrl;
-	}
-
-	public formatBody(body: HTTPRequestBodyContent): {
-		body: string | URLSearchParams | Uint8Array | FormData | BodyInit;
-		type?: string;
-	} {
-		let newBody:
-			| string
-			| URLSearchParams
-			| Uint8Array
-			| FormData
-			| BodyInit
-			| undefined;
-		let contentType: string | undefined;
-
-		switch (body.type) {
-			case "formdata": {
-				const formdata = new FormData();
-				for (const name in body.value) {
-					const value = body.value[name] as FormDataSetRequest;
-
-					value.fileName
-						? formdata.set(name, value.value as Blob, value.fileName)
-						: formdata.set(name, value.value);
-				}
-				newBody = formdata;
-				break;
-			}
-
-			case "json": {
-				newBody = JSON.stringify(body.value);
-				contentType = "application/json";
-				break;
-			}
-
-			case "urlencoded": {
-				newBody = new URLSearchParams(body.value);
-				contentType = "application/x-www-form-urlencoded";
-				break;
-			}
-
-			case "unknown": {
-				newBody = body.value as BodyInit;
-				break;
-			}
-
-			case "jsonWithBigInts": {
-				newBody = JSONv2.stringify(body.value);
-				contentType = "application/json";
-				break;
-			}
-
-			default: {
-				newBody = body.value;
-				break;
-			}
-		}
-
-		return {
-			body: newBody,
-			type: contentType,
-		};
-	}
-
-	public parseRatelimitHeaders(headers: Headers): Ratelimit | undefined {
-		if (!headers.has(RATELIMIT_LIMIT_HEADER)) return;
-
-		return {
-			_limit: headers.get(RATELIMIT_LIMIT_HEADER) as string,
-			remaining: Number.parseInt(
-				headers.get(RATELIMIT_REMAINING_HEADER) as string,
-				10,
-			),
-			reset: Number.parseInt(headers.get(RATELIMIT_RESET_HEADER) as string, 10),
-		};
 	}
 }
 
