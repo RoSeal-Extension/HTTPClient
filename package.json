@@ -7,11 +7,9 @@
     "@biomejs/biome": "2.2.4"
   },
   "peerDependencies": {
-    "typescript": "^5.9.2"
-  },
-  "dependencies": {
-    "json-bigint-native": "1.2.0",
-    "parse-roblox-errors": "1.1.10",
-    "roblox-bat": "0.6.0"
+    "typescript": "^5.9.2",
+    "roblox-bat": "^0.6.0",
+    "json-bigint-native": "^1.2.0",
+    "parse-roblox-errors": "^1.1.10"
   }
 }
