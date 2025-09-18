@@ -1,5 +1,5 @@
 export const RETRY_ERROR_CODES = [500, 502, 503, 504];
-export const DEFAULT_ACCOUNT_ID = "default";
+export const DEFAULT_ACCOUNT_TOKEN = "default";
 export const CSRF_TOKEN_HEADER_NAME = "x-csrf-token";
 export const OAUTH_AUTHORIZATION_HEADER_NAME = "authorization";
 export const CLOUD_API_KEY_HEADER_NAME = "x-api-key";

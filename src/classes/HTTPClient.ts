@@ -1,19 +1,19 @@
 import type { MaybePromise } from "bun";
 import * as JSONv2 from "json-bigint-native";
 import {
+	type AnyError,
 	GENERIC_CHALLENGE_ID_HEADER,
 	GENERIC_CHALLENGE_METADATA_HEADER,
 	GENERIC_CHALLENGE_TYPE_HEADER,
+	type ParsedChallenge,
 	parseBEDEV1Error,
 	parseBEDEV2Error,
 	parseChallengeHeaders,
-	type AnyError,
-	type ParsedChallenge,
 } from "parse-roblox-errors";
 import type { HBAClient } from "roblox-bat";
 import {
 	CSRF_TOKEN_HEADER_NAME,
-	DEFAULT_ACCOUNT_ID,
+	DEFAULT_ACCOUNT_TOKEN,
 	RATELIMIT_LIMIT_HEADER,
 	RATELIMIT_REMAINING_HEADER,
 	RATELIMIT_RESET_HEADER,
@@ -23,9 +23,9 @@ import {
 } from "../constants.ts";
 import { canParseURL, filterObject } from "../utils.ts";
 import {
-	HTTPResponse,
 	type AnyHTTPRequest,
 	type CamelizeObjectFn,
+	HTTPResponse,
 } from "./HTTPResponse.ts";
 import { RESTError } from "./RESTError.ts";
 
@@ -89,7 +89,7 @@ export type InternalHTTPRequest<T extends string> = {
 	camelizeResponse?: boolean;
 	cache?: RequestCache;
 	bypassCORS?: boolean;
-	accountId?: string | number;
+	accountToken?: string | number;
 	overrideDeviceType?: T;
 };
 
@@ -122,6 +122,8 @@ export type HTTPClientConstructorOptions<T extends string> = {
 
 	trackingUserAgent?: string;
 	trackingSearchParam?: string;
+
+	accountTokenHeaderName?: string;
 };
 
 export default class HTTPClient<T extends string = string> {
@@ -141,17 +143,17 @@ export default class HTTPClient<T extends string = string> {
 
 	public getCsrfToken(
 		authorized = false,
-		accountId: string | number = DEFAULT_ACCOUNT_ID,
+		accountToken: string | number = DEFAULT_ACCOUNT_TOKEN,
 	): MaybePromise<string | undefined> {
 		let token: MaybePromise<string | undefined>;
 		if (authorized) {
-			token = this.csrfTokens.accounts[accountId];
+			token = this.csrfTokens.accounts[accountToken];
 		} else {
 			token = this.csrfTokens.ip;
 		}
 
 		if (
-			accountId === DEFAULT_ACCOUNT_ID &&
+			accountToken === DEFAULT_ACCOUNT_TOKEN &&
 			authorized &&
 			!token &&
 			this._options.onWebsite
@@ -168,10 +170,10 @@ export default class HTTPClient<T extends string = string> {
 	public setCsrfToken(
 		value: MaybePromise<string | undefined>,
 		authorized?: boolean,
-		accountId: string | number = DEFAULT_ACCOUNT_ID,
+		accountToken: string | number = DEFAULT_ACCOUNT_TOKEN,
 	) {
 		if (authorized) {
-			this.csrfTokens.accounts[accountId] = value;
+			this.csrfTokens.accounts[accountToken] = value;
 		}
 
 		this.csrfTokens.ip = value;
@@ -239,6 +241,13 @@ export default class HTTPClient<T extends string = string> {
 			// Filter undefined & null values
 			search = new URLSearchParams(
 				filterObject(search) as Record<string, string>,
+			);
+		}
+
+		if (request.accountToken && this._options.accountTokenHeaderName) {
+			search.set(
+				this._options.accountTokenHeaderName,
+				request.accountToken.toString(),
 			);
 		}
 
@@ -426,7 +435,7 @@ export default class HTTPClient<T extends string = string> {
 		) {
 			const csrfToken = await this.getCsrfToken(
 				request.includeCredentials,
-				request.accountId,
+				request.accountToken,
 			);
 
 			if (csrfToken) {
@@ -454,7 +463,7 @@ export default class HTTPClient<T extends string = string> {
 				this.setCsrfToken(
 					csrfToken,
 					request.includeCredentials,
-					request.accountId,
+					request.accountToken,
 				);
 				headers.set(CSRF_TOKEN_HEADER_NAME, csrfToken);
 
