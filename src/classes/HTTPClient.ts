@@ -124,6 +124,8 @@ export type HTTPClientConstructorOptions<T extends string> = {
 	trackingSearchParam?: string;
 
 	accountTokenSearchParam?: string;
+
+	isDev?: boolean;
 };
 
 export default class HTTPClient<T extends string = string> {
@@ -263,7 +265,8 @@ export default class HTTPClient<T extends string = string> {
 		}
 
 		const formattedUrl =
-			url.startsWith("/") || (canParseURL(url) && !url.startsWith("localhost:"))
+			url.startsWith("/") ||
+			(canParseURL(url) && this._options.isDev && !url.startsWith("localhost:"))
 				? new URL(url, location.href)
 				: new URL(`${protocol}://${url.replace(REMOVE_PROTOCOL_REGEX, "")}`);
 		for (const [key, value] of search) {
@@ -272,6 +275,7 @@ export default class HTTPClient<T extends string = string> {
 
 		// Force http if requesting localhost
 		if (
+			this._options.isDev &&
 			formattedUrl.hostname === "localhost" &&
 			formattedUrl.protocol === "https:"
 		) {
