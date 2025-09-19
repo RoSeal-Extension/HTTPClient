@@ -123,7 +123,7 @@ export type HTTPClientConstructorOptions<T extends string> = {
 	trackingUserAgent?: string;
 	trackingSearchParam?: string;
 
-	accountTokenHeaderName?: string;
+	accountTokenSearchParam?: string;
 };
 
 export default class HTTPClient<T extends string = string> {
@@ -244,9 +244,9 @@ export default class HTTPClient<T extends string = string> {
 			);
 		}
 
-		if (request.accountToken && this._options.accountTokenHeaderName) {
+		if (request.accountToken && this._options.accountTokenSearchParam) {
 			search.set(
-				this._options.accountTokenHeaderName,
+				this._options.accountTokenSearchParam,
 				request.accountToken.toString(),
 			);
 		}
