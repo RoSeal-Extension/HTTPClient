@@ -266,7 +266,8 @@ export default class HTTPClient<T extends string = string> {
 
 		const formattedUrl =
 			url.startsWith("/") ||
-			(canParseURL(url) && this._options.isDev && !url.startsWith("localhost:"))
+			(canParseURL(url) &&
+				(!this._options.isDev || !url.startsWith("localhost:")))
 				? new URL(url, location.href)
 				: new URL(`${protocol}://${url.replace(REMOVE_PROTOCOL_REGEX, "")}`);
 		for (const [key, value] of search) {
