@@ -90,7 +90,7 @@ export type InternalHTTPRequest<T extends string> = {
 	cache?: RequestCache;
 	bypassCORS?: boolean;
 	accountToken?: string | number;
-	overrideDeviceType?: T;
+	overridePlatformType?: T;
 };
 
 export type HTTPRequest<T extends string> = InternalHTTPRequest<T> & {
@@ -117,8 +117,8 @@ export type HTTPClientConstructorOptions<T extends string> = {
 	bypassCORSFetch?: (typeof globalThis)["fetch"];
 	camelizeObject?: CamelizeObjectFn;
 
-	overrideDeviceTypeHeaderName?: string;
-	overrideDeviceTypeToUserAgent?: Record<T, string>;
+	overridePlatformTypeSearchParam?: string;
+	overridePlatformTypeToUserAgent?: Record<T, string>;
 
 	trackingUserAgent?: string;
 	trackingSearchParam?: string;
@@ -192,15 +192,15 @@ export default class HTTPClient<T extends string = string> {
 				: (filterObject(request.headers) as Record<string, string>),
 		);
 
-		if (request.overrideDeviceType) {
+		if (request.overridePlatformType) {
 			if (
-				this._options.overrideDeviceTypeToUserAgent &&
-				!this._options.overrideDeviceTypeHeaderName
+				this._options.overridePlatformTypeToUserAgent &&
+				!this._options.overridePlatformTypeSearchParam
 			) {
 				newHeaders.set(
 					USER_AGENT_HEADER_NAME,
-					this._options.overrideDeviceTypeToUserAgent[
-						request.overrideDeviceType
+					this._options.overridePlatformTypeToUserAgent[
+						request.overridePlatformType
 					],
 				);
 			}
@@ -253,11 +253,11 @@ export default class HTTPClient<T extends string = string> {
 			);
 		}
 
-		if (request.overrideDeviceType) {
-			if (this._options.overrideDeviceTypeHeaderName) {
+		if (request.overridePlatformType) {
+			if (this._options.overridePlatformTypeSearchParam) {
 				search.set(
-					this._options.overrideDeviceTypeHeaderName,
-					request.overrideDeviceType,
+					this._options.overridePlatformTypeSearchParam,
+					request.overridePlatformType,
 				);
 			}
 		} else if (this._options.trackingSearchParam) {
