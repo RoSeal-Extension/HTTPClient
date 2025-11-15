@@ -3,6 +3,7 @@ export const DEFAULT_ACCOUNT_TOKEN = "default";
 export const CSRF_TOKEN_HEADER_NAME = "x-csrf-token";
 export const OAUTH_AUTHORIZATION_HEADER_NAME = "authorization";
 export const CLOUD_API_KEY_HEADER_NAME = "x-api-key";
+export const INTERNAL_API_KEY_HEADER_NAME = "roblox-api-key";
 export const REMOVE_PROTOCOL_REGEX = /^https?:\/\//;
 export const USER_AGENT_HEADER_NAME = "user-agent";
 

@@ -12,8 +12,11 @@ import {
 } from "parse-roblox-errors";
 import type { HBAClient } from "roblox-bat";
 import {
+	CLOUD_API_KEY_HEADER_NAME,
 	CSRF_TOKEN_HEADER_NAME,
 	DEFAULT_ACCOUNT_TOKEN,
+	INTERNAL_API_KEY_HEADER_NAME,
+	OAUTH_AUTHORIZATION_HEADER_NAME,
 	RATELIMIT_LIMIT_HEADER,
 	RATELIMIT_REMAINING_HEADER,
 	RATELIMIT_RESET_HEADER,
@@ -78,6 +81,24 @@ export type HTTPRequestBodyContent =
 			value: unknown;
 	  };
 
+export type HTTPRequestCredentials =
+	| {
+			type: "cookies";
+			value: boolean;
+	  }
+	| {
+			type: "internalApiKey";
+			value: string;
+	  }
+	| {
+			type: "openCloudApiKey";
+			value: string;
+	  }
+	| {
+			type: "bearerToken";
+			value: string;
+	  };
+
 export type InternalHTTPRequest<T extends string> = {
 	method?: HTTPMethod;
 	url: string;
@@ -85,12 +106,13 @@ export type InternalHTTPRequest<T extends string> = {
 	headers?: Record<string, unknown> | Headers;
 	body?: HTTPRequestBodyContent;
 	expect?: ExpectContentType;
-	includeCredentials?: boolean;
+	credentials?: HTTPRequestCredentials;
 	camelizeResponse?: boolean;
 	cache?: RequestCache;
 	bypassCORS?: boolean;
 	accountToken?: string | number;
 	overridePlatformType?: T;
+	signal?: AbortSignal;
 };
 
 export type HTTPRequest<T extends string> = InternalHTTPRequest<T> & {
@@ -192,6 +214,29 @@ export default class HTTPClient<T extends string = string> {
 				: (filterObject(request.headers) as Record<string, string>),
 		);
 
+		if (request.credentials) {
+			switch (request.credentials.type) {
+				case "bearerToken": {
+					newHeaders.set(
+						OAUTH_AUTHORIZATION_HEADER_NAME,
+						`Bearer ${request.credentials.value}`,
+					);
+					break;
+				}
+				case "internalApiKey": {
+					newHeaders.set(
+						INTERNAL_API_KEY_HEADER_NAME,
+						request.credentials.value,
+					);
+					break;
+				}
+				case "openCloudApiKey": {
+					newHeaders.set(CLOUD_API_KEY_HEADER_NAME, request.credentials.value);
+					break;
+				}
+			}
+		}
+
 		if (request.overridePlatformType) {
 			if (
 				this._options.overridePlatformTypeToUserAgent &&
@@ -211,11 +256,14 @@ export default class HTTPClient<T extends string = string> {
 			newHeaders.set(USER_AGENT_HEADER_NAME, this._options.trackingUserAgent);
 		}
 
-		if (this._options.hbaClient) {
+		if (
+			(!request.credentials || request.credentials?.type === "cookies") &&
+			this._options.hbaClient
+		) {
 			const hbaHeaders = await this._options.hbaClient.generateBaseHeaders(
 				request.url.toString(),
 				request.method,
-				request.includeCredentials,
+				request.credentials?.value,
 				newBody,
 			);
 
@@ -351,8 +399,6 @@ export default class HTTPClient<T extends string = string> {
 	public async _httpRequest<U = unknown>(
 		request: InternalHTTPRequest<T>,
 	): Promise<HTTPResponse<U>> {
-		// handle URL
-		const url = this.formatRequestUrl(request);
 		let newBody:
 			| string
 			| URLSearchParams
@@ -380,17 +426,24 @@ export default class HTTPClient<T extends string = string> {
 			headers,
 			cache: request.cache,
 			body: newBody,
+			signal: request.signal,
 		}) as RequestInit;
 
-		if (request.includeCredentials) {
-			requestInfo.credentials = "include";
-		} else if (request.includeCredentials === false) {
-			requestInfo.credentials = "omit";
+		if (request.credentials?.type === "cookies") {
+			switch (request.credentials.value) {
+				case true: {
+					requestInfo.credentials = "include";
+					break;
+				}
+				case false: {
+					requestInfo.credentials = "omit";
+				}
+			}
 		}
 
 		const response = await (request.bypassCORS && this._options.bypassCORSFetch
 			? this._options.bypassCORSFetch
-			: (this._options.fetch ?? fetch))(url.toString(), requestInfo);
+			: (this._options.fetch ?? fetch))(request.url, requestInfo);
 
 		return await HTTPResponse.init<U, T>(
 			request,
@@ -428,18 +481,20 @@ export default class HTTPClient<T extends string = string> {
 			filteredHeaders as Headers | Record<string, string>,
 		);
 
-		const isRobloxApiRequest = request.url
-			.toString()
-			.includes(this._options.domains.main);
+		const url = this.formatRequestUrl(request);
+		const isRobloxApiRequest = url.host.endsWith(this._options.domains.main);
+		const isCookiesRequest =
+			!request.credentials || request.credentials.type === "cookies";
 
 		// handle regular CSRF tokens
 		if (
+			isCookiesRequest &&
 			isRobloxApiRequest &&
 			(request.includeCsrf ??
 				(request.includeCsrf === undefined && method !== "GET"))
 		) {
 			const csrfToken = await this.getCsrfToken(
-				request.includeCredentials,
+				request.credentials?.value as boolean,
 				request.accountToken,
 			);
 
@@ -452,11 +507,13 @@ export default class HTTPClient<T extends string = string> {
 		while (true) {
 			const response = await this._httpRequest<void>({
 				...request,
+				url: url.toString(),
 				expect: "none",
 				headers,
 			});
 
 			if (
+				isCookiesRequest &&
 				isRobloxApiRequest &&
 				response.status.code === 403 &&
 				response.headers.has(CSRF_TOKEN_HEADER_NAME)
@@ -467,7 +524,7 @@ export default class HTTPClient<T extends string = string> {
 
 				this.setCsrfToken(
 					csrfToken,
-					request.includeCredentials,
+					request.credentials?.value as boolean,
 					request.accountToken,
 				);
 				headers.set(CSRF_TOKEN_HEADER_NAME, csrfToken);
@@ -476,7 +533,9 @@ export default class HTTPClient<T extends string = string> {
 			}
 
 			const ratelimitHeaders = this.parseRatelimitHeaders(response.headers);
+
 			if (
+				isCookiesRequest &&
 				isRobloxApiRequest &&
 				!response.status.ok &&
 				request.handleChallenge
