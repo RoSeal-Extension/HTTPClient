@@ -1,10 +1,11 @@
 {
   "name": "@roseal/http-client",
   "module": "src/index.ts",
+  "version": "0.1.0",
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
-    "@biomejs/biome": "2.3.5"
+    "@biomejs/biome": "2.3.10"
   },
   "peerDependencies": {
     "typescript": "^5.9.3",
