@@ -1,7 +1,7 @@
 {
   "name": "@roseal/http-client",
   "module": "src/index.ts",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",

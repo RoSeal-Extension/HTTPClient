@@ -32,6 +32,10 @@ import {
 } from "./HTTPResponse.ts";
 import { RESTError } from "./RESTError.ts";
 
+export type BareHBAClient = {
+	generateBaseHeaders: HBAClient["generateBaseHeaders"];
+};
+
 export type HTTPMethod =
 	| "GET"
 	| "POST"
@@ -132,7 +136,7 @@ export type HTTPClientDomains = {
 export type HTTPClientConstructorOptions<T extends string> = {
 	domains: HTTPClientDomains;
 
-	hbaClient?: HBAClient;
+	hbaClient?: BareHBAClient;
 	onWebsite?: boolean;
 
 	fetch?: (typeof globalThis)["fetch"];
