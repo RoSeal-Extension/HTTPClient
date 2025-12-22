@@ -211,7 +211,7 @@ export default class HTTPClient<T extends string = string> {
 		request: InternalHTTPRequest<T>,
 		contentType?: string,
 		newBody?: Uint8Array | BodyInit,
-	) {
+	): Promise<Headers> {
 		const newHeaders = new Headers(
 			!request.headers || request.headers instanceof Headers
 				? request.headers
