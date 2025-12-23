@@ -1,7 +1,8 @@
 import HTTPClient from "./classes/HTTPClient";
-import { HTTPResponse } from "./classes/HTTPResponse";
-import { RESTError } from "./classes/RESTError";
 
-export { HTTPClient, HTTPResponse, RESTError };
+export { HTTPClient };
 
 export * from "./constants.ts";
+export * from "./classes/HTTPClient.ts";
+export * from "./classes/HTTPResponse.ts";
+export * from "./classes/RESTError.ts";

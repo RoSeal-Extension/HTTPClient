@@ -117,6 +117,14 @@ export type InternalHTTPRequest<T extends string> = {
 	accountToken?: string | number;
 	overridePlatformType?: T;
 	signal?: AbortSignal;
+	redirect?: RequestRedirect;
+	integrity?: string;
+	keepalive?: boolean;
+	mode?: RequestMode;
+	priority?: RequestPriority;
+	referrer?: string;
+	referrerPolicy?: ReferrerPolicy;
+	window?: null;
 };
 
 export type HTTPRequest<T extends string> = InternalHTTPRequest<T> & {
@@ -431,7 +439,18 @@ export default class HTTPClient<T extends string = string> {
 			cache: request.cache,
 			body: newBody,
 			signal: request.signal,
+			redirect: request.redirect,
+			integrity: request.integrity,
+			keepalive: request.keepalive,
+			mode: request.mode,
+			priority: request.priority,
+			referrer: request.referrer,
+			referrerPolicy: request.referrerPolicy,
 		}) as RequestInit;
+
+		if ("window" in request) {
+			requestInfo.window = null;
+		}
 
 		if (request.credentials?.type === "cookies") {
 			switch (request.credentials.value) {
