@@ -28,7 +28,7 @@ export class HTTPResponse<T = unknown, U extends string = string> {
 		camelizeObject?: CamelizeObjectFn,
 	): Promise<T> {
 		if (
-			request.expect === "none" ||
+			request.ignoreExpect || request.expect === "none" ||
 			response.headers.get("content-length") === "0" ||
 			response.status === 204
 		) {

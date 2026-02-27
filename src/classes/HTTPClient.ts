@@ -110,6 +110,7 @@ export type InternalHTTPRequest<T extends string> = {
 	headers?: Record<string, unknown> | Headers;
 	body?: HTTPRequestBodyContent;
 	expect?: ExpectContentType;
+	ignoreExpect?: boolean;
 	credentials?: HTTPRequestCredentials;
 	camelizeResponse?: boolean;
 	cache?: RequestCache;
@@ -547,7 +548,7 @@ export default class HTTPClient<T extends string = string> {
 			const response = await this._httpRequest<void>({
 				...request,
 				url: url.toString(),
-				expect: "none",
+				ignoreExpect: true,
 				headers,
 			});
 
