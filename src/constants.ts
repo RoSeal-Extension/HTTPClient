@@ -6,6 +6,8 @@ export const CLOUD_API_KEY_HEADER_NAME = "x-api-key";
 export const INTERNAL_API_KEY_HEADER_NAME = "roblox-api-key";
 export const REMOVE_PROTOCOL_REGEX = /^https?:\/\//;
 export const USER_AGENT_HEADER_NAME = "user-agent";
+export const CONTENT_TYPE_HEADER_NAME = "content-type";
+export const ACCEPT_CONTENT_TYPE_HEADER_NAME = "accept";
 
 export const RATELIMIT_LIMIT_HEADER = "x-ratelimit-limit";
 export const RATELIMIT_REMAINING_HEADER = "x-ratelimit-remaining";

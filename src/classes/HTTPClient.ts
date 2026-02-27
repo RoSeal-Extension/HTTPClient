@@ -12,7 +12,9 @@ import {
 } from "parse-roblox-errors";
 import type { HBAClient } from "roblox-bat";
 import {
+	ACCEPT_CONTENT_TYPE_HEADER_NAME,
 	CLOUD_API_KEY_HEADER_NAME,
+	CONTENT_TYPE_HEADER_NAME,
 	CSRF_TOKEN_HEADER_NAME,
 	DEFAULT_ACCOUNT_TOKEN,
 	INTERNAL_API_KEY_HEADER_NAME,
@@ -286,22 +288,26 @@ export default class HTTPClient<T extends string = string> {
 			}
 		}
 
-		switch (request.expect) {
-			case "dom": {
-				newHeaders.set("accept", "text/html, */*");
-				break;
-			}
-			case "text": {
-				newHeaders.set("accept", "text/plain, */*");
-				break;
-			}
-			case "json":
-			case undefined: {
-					newHeaders.set("accept", "application/json, text/plain, */*")
+		if (!newHeaders.has(ACCEPT_CONTENT_TYPE_HEADER_NAME))
+			switch (request.expect) {
+				case "dom": {
+					newHeaders.set(ACCEPT_CONTENT_TYPE_HEADER_NAME, "text/html, */*");
+					break;
 				}
-		}
+				case "text": {
+					newHeaders.set(ACCEPT_CONTENT_TYPE_HEADER_NAME, "text/plain, */*");
+					break;
+				}
+				case "json":
+				case undefined: {
+					newHeaders.set(
+						ACCEPT_CONTENT_TYPE_HEADER_NAME,
+						"application/json, text/plain, */*",
+					);
+				}
+			}
 
-		if (contentType) newHeaders.set("content-type", contentType);
+		if (contentType) newHeaders.set(CONTENT_TYPE_HEADER_NAME, contentType);
 
 		return newHeaders;
 	}
@@ -337,7 +343,10 @@ export default class HTTPClient<T extends string = string> {
 					request.overridePlatformType,
 				);
 			}
-		} else if (this._options.trackingSearchParam && !request.skipTrackingSearchParam) {
+		} else if (
+			this._options.trackingSearchParam &&
+			!request.skipTrackingSearchParam
+		) {
 			search.set(this._options.trackingSearchParam, "");
 		}
 
