@@ -125,6 +125,7 @@ export type InternalHTTPRequest<T extends string> = {
 	referrer?: string;
 	referrerPolicy?: ReferrerPolicy;
 	window?: null;
+	skipTrackingSearchParam?: boolean;
 };
 
 export type HTTPRequest<T extends string> = InternalHTTPRequest<T> & {
@@ -284,6 +285,21 @@ export default class HTTPClient<T extends string = string> {
 			}
 		}
 
+		switch (request.expect) {
+			case "dom": {
+				newHeaders.set("accept", "text/html, */*");
+				break;
+			}
+			case "text": {
+				newHeaders.set("accept", "text/plain, */*");
+				break;
+			}
+			case "json":
+			case undefined: {
+					newHeaders.set("accept", "application/json, text/plain, */*")
+				}
+		}
+
 		if (contentType) newHeaders.set("content-type", contentType);
 
 		return newHeaders;
@@ -320,7 +336,7 @@ export default class HTTPClient<T extends string = string> {
 					request.overridePlatformType,
 				);
 			}
-		} else if (this._options.trackingSearchParam) {
+		} else if (this._options.trackingSearchParam && !request.skipTrackingSearchParam) {
 			search.set(this._options.trackingSearchParam, "");
 		}
 
