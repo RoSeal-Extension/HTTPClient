@@ -120,9 +120,13 @@ export class CookieJar extends Set<Cookie> {
 	}
 
 	public addCookiesFromHeaders(headers: Headers, url: URL) {
-		const cookies = parseSetCookieHeaders(headers, url);
+		const cookies = this.parseSetCookieHeaders(headers, url);
 
 		this.addCookies(cookies, url);
+	}
+
+	public parseSetCookieHeaders(headers: Headers, url: URL) {
+		return parseSetCookieHeaders(headers, url);
 	}
 
 	public deleteCookie(name: string, domain: string): void {

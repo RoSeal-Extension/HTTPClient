@@ -36,7 +36,6 @@ import {
 } from "./HTTPResponse.ts";
 import { RESTError } from "./RESTError.ts";
 import type { Cookie, CookieJar } from "./CookieJar.ts";
-import { parseSetCookieHeaders } from "../utils/cookies.ts";
 
 export type BareHBAClient = {
 	generateBaseHeaders: HBAClient["generateBaseHeaders"];
@@ -530,7 +529,7 @@ export default class HTTPClient<T extends string = string> {
 
 		if (cookieJar) {
 			const url = new URL(response.url);
-			const cookies = parseSetCookieHeaders(response.headers, url);
+			const cookies = cookieJar.parseSetCookieHeaders(response.headers, url);
 			if (this._options.onCookiesUpdated)
 				this._options.onCookiesUpdated(
 					request.accountToken || DEFAULT_ACCOUNT_TOKEN,
