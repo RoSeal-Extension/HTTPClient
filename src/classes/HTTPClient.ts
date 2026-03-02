@@ -168,6 +168,10 @@ export type HTTPClientConstructorOptions<T extends string> = {
 	accountTokenSearchParam?: string;
 
 	isDev?: boolean;
+
+	handleChallenge?: (
+		challenge: ParsedChallenge,
+	) => MaybePromise<ParsedChallenge | undefined>;
 };
 
 export default class HTTPClient<T extends string = string> {
@@ -608,16 +612,18 @@ export default class HTTPClient<T extends string = string> {
 
 			const ratelimitHeaders = this.parseRatelimitHeaders(response.headers);
 
+			const handleChallenge =
+				this._options.handleChallenge ?? request.handleChallenge;
 			if (
 				isCookiesRequest &&
 				isRobloxApiRequest &&
 				!response.status.ok &&
-				request.handleChallenge
+				handleChallenge
 			) {
 				const parsedChallenge = parseChallengeHeaders(response.headers);
 
 				if (parsedChallenge) {
-					const newChallenge = await request.handleChallenge(parsedChallenge);
+					const newChallenge = await handleChallenge(parsedChallenge);
 					if (newChallenge) {
 						headers.set(
 							GENERIC_CHALLENGE_TYPE_HEADER,
