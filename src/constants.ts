@@ -9,6 +9,9 @@ export const USER_AGENT_HEADER_NAME = "user-agent";
 export const CONTENT_TYPE_HEADER_NAME = "content-type";
 export const ACCEPT_CONTENT_TYPE_HEADER_NAME = "accept";
 
+export const SET_COOKIE_HEADER_NAME = "set-cookie";
+export const COOKIE_HEADER_NAME = "cookie";
+
 export const RATELIMIT_LIMIT_HEADER = "x-ratelimit-limit";
 export const RATELIMIT_REMAINING_HEADER = "x-ratelimit-remaining";
 export const RATELIMIT_RESET_HEADER = "x-ratelimit-reset";

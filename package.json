@@ -8,6 +8,10 @@
     ".": {
       "import": "./src/index.ts",
       "types": "./src/index.ts"
+    },
+    "./jar": {
+      "import": "./src/classes/CookieJar.ts",
+      "types": "./src/classes/CookieJar.ts"
     }
   },
   "devDependencies": {
@@ -16,8 +20,9 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "roblox-bat": "^0.6.2",
     "json-bigint-native": "^1.2.0",
-    "parse-roblox-errors": "^1.1.11"
+    "parse-roblox-errors": "^1.1.11",
+    "publicsuffix-json": "github:fbraz3/publicsuffix-json",
+    "roblox-bat": "^0.6.2"
   }
 }

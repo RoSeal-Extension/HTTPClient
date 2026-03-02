@@ -15,6 +15,7 @@ import {
 	ACCEPT_CONTENT_TYPE_HEADER_NAME,
 	CLOUD_API_KEY_HEADER_NAME,
 	CONTENT_TYPE_HEADER_NAME,
+	COOKIE_HEADER_NAME,
 	CSRF_TOKEN_HEADER_NAME,
 	DEFAULT_ACCOUNT_TOKEN,
 	INTERNAL_API_KEY_HEADER_NAME,
@@ -26,13 +27,14 @@ import {
 	RETRY_ERROR_CODES,
 	USER_AGENT_HEADER_NAME,
 } from "../constants.ts";
-import { canParseURL, filterObject } from "../utils.ts";
+import { canParseURL, filterObject } from "../utils/utils.ts";
 import {
 	type AnyHTTPRequest,
 	type CamelizeObjectFn,
 	HTTPResponse,
 } from "./HTTPResponse.ts";
 import { RESTError } from "./RESTError.ts";
+import type { CookieJar } from "./CookieJar.ts";
 
 export type BareHBAClient = {
 	generateBaseHeaders: HBAClient["generateBaseHeaders"];
@@ -155,6 +157,8 @@ export type HTTPClientConstructorOptions<T extends string> = {
 	bypassCORSFetch?: (typeof globalThis)["fetch"];
 	camelizeObject?: CamelizeObjectFn;
 
+	jars?: Record<string, CookieJar>;
+
 	overridePlatformTypeSearchParam?: string;
 	overridePlatformTypeToUserAgent?: Record<T, string>;
 
@@ -273,11 +277,24 @@ export default class HTTPClient<T extends string = string> {
 		}
 
 		if (
+			request.credentials?.type === "cookies" &&
+			request.credentials.value === true &&
+			request.accountToken &&
+			this._options.jars
+		) {
+			const jar = this._options.jars[request.accountToken];
+			if (jar) {
+				const cookiesStr = jar.getCookieStringFromURL(new URL(request.url));
+				newHeaders.set(COOKIE_HEADER_NAME, cookiesStr);
+			}
+		}
+
+		if (
 			(!request.credentials || request.credentials?.type === "cookies") &&
 			this._options.hbaClient
 		) {
 			const hbaHeaders = await this._options.hbaClient.generateBaseHeaders(
-				request.url.toString(),
+				request.url,
 				request.method,
 				request.credentials?.value,
 				newBody,
@@ -579,6 +596,18 @@ export default class HTTPClient<T extends string = string> {
 				headers.set(CSRF_TOKEN_HEADER_NAME, csrfToken);
 
 				continue;
+			}
+
+			if (
+				request.credentials?.type === "cookies" &&
+				request.credentials.value === true &&
+				request.accountToken &&
+				this._options.jars
+			) {
+				const jar = this._options.jars[request.accountToken];
+				if (jar) {
+					jar.addCookiesFromHeaders(response.headers, new URL(response.url));
+				}
 			}
 
 			const ratelimitHeaders = this.parseRatelimitHeaders(response.headers);
