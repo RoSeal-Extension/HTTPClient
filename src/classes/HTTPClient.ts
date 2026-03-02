@@ -227,6 +227,7 @@ export default class HTTPClient<T extends string = string> {
 		request: InternalHTTPRequest<T>,
 		contentType?: string,
 		newBody?: Uint8Array | BodyInit,
+		cookieJar?: CookieJar,
 	): Promise<Headers> {
 		const newHeaders = new Headers(
 			!request.headers || request.headers instanceof Headers
@@ -276,17 +277,9 @@ export default class HTTPClient<T extends string = string> {
 			newHeaders.set(USER_AGENT_HEADER_NAME, this._options.trackingUserAgent);
 		}
 
-		if (
-			request.credentials?.type === "cookies" &&
-			request.credentials.value === true &&
-			request.accountToken &&
-			this._options.jars
-		) {
-			const jar = this._options.jars[request.accountToken];
-			if (jar) {
-				const cookiesStr = jar.getCookieStringFromURL(new URL(request.url));
-				newHeaders.set(COOKIE_HEADER_NAME, cookiesStr);
-			}
+		if (cookieJar) {
+			const cookiesStr = cookieJar.getCookieStringFromURL(new URL(request.url));
+			newHeaders.set(COOKIE_HEADER_NAME, cookiesStr);
 		}
 
 		if (
@@ -470,6 +463,16 @@ export default class HTTPClient<T extends string = string> {
 			contentType = formattedBody.type;
 		}
 
+		let cookieJar: CookieJar | undefined;
+		if (
+			request.credentials?.type === "cookies" &&
+			request.credentials.value === true &&
+			request.accountToken &&
+			this._options.jars
+		) {
+			cookieJar = this._options.jars[request.accountToken];
+		}
+
 		const headers = await this.handleRequestHeaders(
 			request,
 			contentType,
@@ -510,6 +513,10 @@ export default class HTTPClient<T extends string = string> {
 		const response = await (request.bypassCORS && this._options.bypassCORSFetch
 			? this._options.bypassCORSFetch
 			: (this._options.fetch ?? fetch))(request.url, requestInfo);
+
+		if (cookieJar) {
+			cookieJar.addCookiesFromHeaders(response.headers, new URL(response.url));
+		}
 
 		return await HTTPResponse.init<U, T>(
 			request,
@@ -596,18 +603,6 @@ export default class HTTPClient<T extends string = string> {
 				headers.set(CSRF_TOKEN_HEADER_NAME, csrfToken);
 
 				continue;
-			}
-
-			if (
-				request.credentials?.type === "cookies" &&
-				request.credentials.value === true &&
-				request.accountToken &&
-				this._options.jars
-			) {
-				const jar = this._options.jars[request.accountToken];
-				if (jar) {
-					jar.addCookiesFromHeaders(response.headers, new URL(response.url));
-				}
 			}
 
 			const ratelimitHeaders = this.parseRatelimitHeaders(response.headers);
