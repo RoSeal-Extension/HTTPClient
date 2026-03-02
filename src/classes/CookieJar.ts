@@ -114,12 +114,12 @@ export class CookieJar extends Set<Cookie> {
 			) {
 				// if cookie exists, let's delete it so we override it
 				this.deleteCookie(cookie.name, cookie.domain);
-				this.add(cookie);
+				if (cookie.value) this.add(cookie);
 			}
 		}
 	}
 
-	public addCookiesFromHeaders(headers: Headers, url: URL): void {
+	public addCookiesFromHeaders(headers: Headers, url: URL) {
 		const cookies = parseSetCookieHeaders(headers, url);
 
 		this.addCookies(cookies, url);

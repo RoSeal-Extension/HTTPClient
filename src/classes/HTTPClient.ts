@@ -35,7 +35,8 @@ import {
 	HTTPResponse,
 } from "./HTTPResponse.ts";
 import { RESTError } from "./RESTError.ts";
-import type { CookieJar } from "./CookieJar.ts";
+import type { Cookie, CookieJar } from "./CookieJar.ts";
+import { parseSetCookieHeaders } from "../utils/cookies.ts";
 
 export type BareHBAClient = {
 	generateBaseHeaders: HBAClient["generateBaseHeaders"];
@@ -132,6 +133,7 @@ export type InternalHTTPRequest<T extends string> = {
 	referrerPolicy?: ReferrerPolicy;
 	window?: null;
 	skipTrackingSearchParam?: boolean;
+	skipAddingCookies?: boolean;
 };
 
 export type HTTPRequest<T extends string> = InternalHTTPRequest<T> & {
@@ -178,6 +180,7 @@ export type HTTPClientConstructorOptions<T extends string> = {
 		response: HTTPResponse,
 		message: string,
 	) => void;
+	onCookiesUpdated?: (accountToken: string | number, cookies: Cookie[]) => void;
 };
 
 export default class HTTPClient<T extends string = string> {
@@ -477,10 +480,10 @@ export default class HTTPClient<T extends string = string> {
 		if (
 			request.credentials?.type === "cookies" &&
 			request.credentials.value === true &&
-			request.accountToken &&
 			this._options.jars
 		) {
-			cookieJar = this._options.jars[request.accountToken];
+			cookieJar =
+				this._options.jars[request.accountToken || DEFAULT_ACCOUNT_TOKEN];
 		}
 
 		const headers = await this.handleRequestHeaders(
@@ -526,7 +529,15 @@ export default class HTTPClient<T extends string = string> {
 			: (this._options.fetch ?? fetch))(request.url, requestInfo);
 
 		if (cookieJar) {
-			cookieJar.addCookiesFromHeaders(response.headers, new URL(response.url));
+			const url = new URL(response.url);
+			const cookies = parseSetCookieHeaders(response.headers, url);
+			if (this._options.onCookiesUpdated)
+				this._options.onCookiesUpdated(
+					request.accountToken || DEFAULT_ACCOUNT_TOKEN,
+					cookies,
+				);
+
+			if (request.skipAddingCookies) cookieJar.addCookies(cookies, url);
 		}
 
 		return await HTTPResponse.init<U, T>(
