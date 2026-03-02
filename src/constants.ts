@@ -8,6 +8,8 @@ export const REMOVE_PROTOCOL_REGEX = /^https?:\/\//;
 export const USER_AGENT_HEADER_NAME = "user-agent";
 export const CONTENT_TYPE_HEADER_NAME = "content-type";
 export const ACCEPT_CONTENT_TYPE_HEADER_NAME = "accept";
+export const ROBLOX_DEPRECATION_MESSAGE_HEADER_NAME =
+	"roblox-deprecation-message";
 
 export const SET_COOKIE_HEADER_NAME = "set-cookie";
 export const COOKIE_HEADER_NAME = "cookie";

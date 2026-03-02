@@ -25,6 +25,7 @@ import {
 	RATELIMIT_RESET_HEADER,
 	REMOVE_PROTOCOL_REGEX,
 	RETRY_ERROR_CODES,
+	ROBLOX_DEPRECATION_MESSAGE_HEADER_NAME,
 	USER_AGENT_HEADER_NAME,
 } from "../constants.ts";
 import { canParseURL, filterObject } from "../utils/utils.ts";
@@ -172,6 +173,11 @@ export type HTTPClientConstructorOptions<T extends string> = {
 	handleChallenge?: (
 		challenge: ParsedChallenge,
 	) => MaybePromise<ParsedChallenge | undefined>;
+	onDeprecationMessage?: (
+		request: HTTPRequest<T>,
+		response: HTTPResponse,
+		message: string,
+	) => void;
 };
 
 export default class HTTPClient<T extends string = string> {
@@ -608,6 +614,17 @@ export default class HTTPClient<T extends string = string> {
 				headers.set(CSRF_TOKEN_HEADER_NAME, csrfToken);
 
 				continue;
+			}
+
+			const deprecationMessage = response.headers.get(
+				ROBLOX_DEPRECATION_MESSAGE_HEADER_NAME,
+			);
+			if (this._options.onDeprecationMessage && deprecationMessage) {
+				this._options.onDeprecationMessage(
+					request,
+					response,
+					deprecationMessage,
+				);
 			}
 
 			const ratelimitHeaders = this.parseRatelimitHeaders(response.headers);
