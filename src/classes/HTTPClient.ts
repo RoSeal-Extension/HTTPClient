@@ -477,6 +477,7 @@ export default class HTTPClient<T extends string = string> {
 			request,
 			contentType,
 			newBody ?? undefined,
+			cookieJar,
 		);
 
 		const requestInfo = filterObject({
