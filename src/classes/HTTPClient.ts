@@ -356,11 +356,13 @@ export default class HTTPClient<T extends string = string> {
 			);
 		}
 
-		if (request.overridePlatformType) {
+		const overridePlatformType =
+			request.overridePlatformType || this._options.defaultOverridePlatformType;
+		if (overridePlatformType) {
 			if (this._options.overridePlatformTypeSearchParam) {
 				search.set(
 					this._options.overridePlatformTypeSearchParam,
-					request.overridePlatformType,
+					overridePlatformType,
 				);
 			}
 		} else if (
