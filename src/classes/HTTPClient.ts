@@ -161,6 +161,7 @@ export type HTTPClientConstructorOptions<T extends string> = {
 
 	jars?: Record<string, CookieJar>;
 
+	defaultOverridePlatformType?: T;
 	overridePlatformTypeSearchParam?: string;
 	overridePlatformTypeToUserAgent?: Record<T, string>;
 
@@ -270,17 +271,14 @@ export default class HTTPClient<T extends string = string> {
 			}
 		}
 
-		if (request.overridePlatformType) {
+		const overridePlatformType =
+			request.overridePlatformType || this._options.defaultOverridePlatformType;
+		if (overridePlatformType) {
 			if (
 				this._options.overridePlatformTypeToUserAgent &&
 				!this._options.overridePlatformTypeSearchParam
 			) {
-				newHeaders.set(
-					USER_AGENT_HEADER_NAME,
-					this._options.overridePlatformTypeToUserAgent[
-						request.overridePlatformType
-					],
-				);
+				newHeaders.set(USER_AGENT_HEADER_NAME, overridePlatformType);
 			}
 		} else if (
 			this._options.trackingUserAgent &&
