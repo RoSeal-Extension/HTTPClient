@@ -133,6 +133,7 @@ export type InternalHTTPRequest<T extends string> = {
 	window?: null;
 	skipTrackingSearchParam?: boolean;
 	skipAddingCookies?: boolean;
+	skipCheckingSetCookie?: boolean;
 };
 
 export type HTTPRequest<T extends string> = InternalHTTPRequest<T> & {
@@ -546,7 +547,7 @@ export default class HTTPClient<T extends string = string> {
 			? this._options.bypassCORSFetch
 			: (this._options.fetch ?? fetch))(request.url, requestInfo);
 
-		if (cookieJar) {
+		if (cookieJar && !request.skipCheckingSetCookie) {
 			const url = new URL(response.url);
 			const cookies = cookieJar.parseSetCookieHeaders(response.headers, url);
 			if (this._options.onCookiesUpdated)
