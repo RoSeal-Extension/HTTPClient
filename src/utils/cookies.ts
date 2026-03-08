@@ -128,7 +128,10 @@ export function canDomainManageCookieFromDomain(
 	);
 }
 
-export function createCookieString(cookies: Cookie[], decode?: boolean) {
+export function createCookieString(
+	cookies: Cookie[],
+	decode?: boolean,
+): string {
 	let cookieString = "";
 
 	for (const cookie of cookies) {
