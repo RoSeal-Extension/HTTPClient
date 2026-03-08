@@ -108,6 +108,8 @@ export function getTLD(domain: string): string | undefined {
 			return suffix;
 		}
 	}
+
+	return domain.split(".").pop();
 }
 
 export function transformDomain(domain: string): string {
