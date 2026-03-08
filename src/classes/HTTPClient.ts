@@ -313,7 +313,7 @@ export default class HTTPClient<T extends string = string> {
 			(!request.credentials || request.credentials?.type === "cookies") &&
 			this._options.hbaClient &&
 			!this._options.disallowedHBAAccountTokens?.includes(
-				request.accountToken || DEFAULT_ACCOUNT_TOKEN,
+				request.accountToken ?? DEFAULT_ACCOUNT_TOKEN,
 			)
 		) {
 			const hbaHeaders = await this._options.hbaClient.generateBaseHeaders(
@@ -502,7 +502,7 @@ export default class HTTPClient<T extends string = string> {
 			this._options.jars
 		) {
 			cookieJar =
-				this._options.jars[request.accountToken || DEFAULT_ACCOUNT_TOKEN];
+				this._options.jars[request.accountToken ?? DEFAULT_ACCOUNT_TOKEN];
 		}
 
 		const headers = await this.handleRequestHeaders(
@@ -552,7 +552,7 @@ export default class HTTPClient<T extends string = string> {
 			const cookies = cookieJar.parseSetCookieHeaders(response.headers, url);
 			if (this._options.onCookiesUpdated)
 				this._options.onCookiesUpdated(
-					request.accountToken || DEFAULT_ACCOUNT_TOKEN,
+					request.accountToken ?? DEFAULT_ACCOUNT_TOKEN,
 					cookies,
 				);
 
