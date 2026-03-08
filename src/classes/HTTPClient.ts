@@ -187,6 +187,7 @@ export type HTTPClientConstructorOptions<T extends string> = {
 export default class HTTPClient<T extends string = string> {
 	private _options: HTTPClientConstructorOptions<T>;
 
+	public jars: Record<string | number, CookieJar> | undefined;
 	public csrfTokens: {
 		accounts: Record<string, MaybePromise<string | undefined>>;
 		ip: MaybePromise<string | undefined>;
@@ -197,6 +198,7 @@ export default class HTTPClient<T extends string = string> {
 
 	constructor(options: HTTPClientConstructorOptions<T>) {
 		this._options = options;
+		this.jars = options.jars;
 	}
 
 	public updateOptions(options: Partial<HTTPClientConstructorOptions<T>>) {
@@ -204,6 +206,8 @@ export default class HTTPClient<T extends string = string> {
 			...this._options,
 			...options,
 		};
+
+		if (this._options.jars) this.jars = this._options.jars;
 	}
 
 	public getCsrfToken(
@@ -284,20 +288,24 @@ export default class HTTPClient<T extends string = string> {
 		if (overridePlatformType) {
 			if (
 				this._options.overridePlatformTypeToUserAgent &&
-				!this._options.overridePlatformTypeSearchParam
+				!this._options.overridePlatformTypeSearchParam &&
+				!newHeaders.has(USER_AGENT_HEADER_NAME)
 			) {
 				newHeaders.set(USER_AGENT_HEADER_NAME, overridePlatformType);
 			}
 		} else if (
 			this._options.trackingUserAgent &&
-			!this._options.trackingSearchParam
+			!this._options.trackingSearchParam &&
+			!newHeaders.has(USER_AGENT_HEADER_NAME)
 		) {
 			newHeaders.set(USER_AGENT_HEADER_NAME, this._options.trackingUserAgent);
 		}
 
 		if (cookieJar) {
 			const cookiesStr = cookieJar.getCookieStringFromURL(new URL(request.url));
-			newHeaders.set(COOKIE_HEADER_NAME, cookiesStr);
+
+			if (!newHeaders.has(COOKIE_HEADER_NAME))
+				newHeaders.set(COOKIE_HEADER_NAME, cookiesStr);
 		}
 
 		if (
