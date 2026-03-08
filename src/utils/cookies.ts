@@ -83,14 +83,14 @@ export function parseSetCookieHeaderValue(
 export function parseSetCookieHeaders(headers: Headers, url: URL): Cookie[] {
 	const cookies: Cookie[] = [];
 
-	headers.forEach((value, header) => {
+	for (const [header, value] of headers.entries()) {
 		if (header.toLowerCase() === SET_COOKIE_HEADER_NAME) {
 			const cookie = parseSetCookieHeaderValue(value, url);
 			if (cookie) {
 				cookies.push(cookie);
 			}
 		}
-	});
+	}
 
 	return cookies;
 }
@@ -126,4 +126,16 @@ export function canDomainManageCookieFromDomain(
 		!(!domainTLD || newDomain !== `.${domainTLD}`) ||
 		newRequestUrl.endsWith(newDomain)
 	);
+}
+
+export function createCookieString(cookies: Cookie[], decode?: boolean) {
+	let cookieString = "";
+
+	for (const cookie of cookies) {
+		cookieString = `${cookieString !== "" ? `${cookieString}; ` : ""}${
+			decode ? encodeURIComponent(cookie.name) : cookie.name
+		}=${decode ? encodeURIComponent(cookie.value) : cookie.value}`;
+	}
+
+	return cookieString;
 }

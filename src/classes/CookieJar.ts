@@ -1,6 +1,7 @@
 import {
 	type Cookie,
 	canDomainManageCookieFromDomain,
+	createCookieString,
 	parseSetCookieHeaders,
 	transformDomain,
 } from "../utils/cookies.ts";
@@ -62,17 +63,8 @@ export class CookieJar extends Set<Cookie> {
 		return Object.values(cookies);
 	}
 
-	public getCookieStringFromURL(url: URL, decode = false): string {
-		const cookies = this.getCookiesFromURL(url);
-		let cookieString = "";
-
-		for (const cookie of cookies) {
-			cookieString = `${cookieString !== "" ? `${cookieString}; ` : ""}${
-				decode ? encodeURIComponent(cookie.name) : cookie.name
-			}=${decode ? encodeURIComponent(cookie.value) : cookie.value}`;
-		}
-
-		return cookieString;
+	public getCookieStringFromURL(url: URL, decode?: boolean): string {
+		return createCookieString(this.getCookiesFromURL(url), decode);
 	}
 
 	public isCookieAllowed(cookie: Cookie): boolean {
@@ -119,22 +111,18 @@ export class CookieJar extends Set<Cookie> {
 		}
 	}
 
-	public addCookiesFromHeaders(headers: Headers, url: URL) {
-		const cookies = this.parseSetCookieHeaders(headers, url);
+	public addCookiesFromHeaders(headers: Headers, url: URL): void {
+		const cookies = parseSetCookieHeaders(headers, url);
 
 		this.addCookies(cookies, url);
 	}
 
-	public parseSetCookieHeaders(headers: Headers, url: URL) {
-		return parseSetCookieHeaders(headers, url);
-	}
-
 	public deleteCookie(name: string, domain: string): void {
-		this.forEach((cookie) => {
+		for (const cookie of this) {
 			if (cookie.name === name && cookie.domain === domain) {
 				this.delete(cookie);
 			}
-		});
+		}
 	}
 
 	constructor(domainSettings?: DomainSetting[], allowAllDomains = true) {
@@ -145,3 +133,4 @@ export class CookieJar extends Set<Cookie> {
 }
 
 export type { Cookie };
+export { createCookieString, parseSetCookieHeaders };

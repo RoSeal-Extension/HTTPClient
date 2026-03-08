@@ -35,7 +35,11 @@ import {
 	HTTPResponse,
 } from "./HTTPResponse.ts";
 import { RESTError } from "./RESTError.ts";
-import type { Cookie, CookieJar } from "./CookieJar.ts";
+import {
+	parseSetCookieHeaders,
+	type Cookie,
+	type CookieJar,
+} from "./CookieJar.ts";
 
 export type BareHBAClient = {
 	generateBaseHeaders: HBAClient["generateBaseHeaders"];
@@ -552,7 +556,7 @@ export default class HTTPClient<T extends string = string> {
 
 		if (cookieJar && !request.skipCheckingSetCookie) {
 			const url = new URL(response.url);
-			const cookies = cookieJar.parseSetCookieHeaders(response.headers, url);
+			const cookies = parseSetCookieHeaders(response.headers, url);
 
 			let shouldSkip = false;
 			if (this._options.onCookiesUpdated)
