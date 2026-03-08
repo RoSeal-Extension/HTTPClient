@@ -152,6 +152,7 @@ export type HTTPClientDomains = {
 export type HTTPClientConstructorOptions<T extends string> = {
 	domains: HTTPClientDomains;
 
+	disallowedHBAAccountTokens?: (string | number)[];
 	hbaClient?: BareHBAClient;
 	onWebsite?: boolean;
 
@@ -196,6 +197,13 @@ export default class HTTPClient<T extends string = string> {
 
 	constructor(options: HTTPClientConstructorOptions<T>) {
 		this._options = options;
+	}
+
+	public updateOptions(options: Partial<HTTPClientConstructorOptions<T>>) {
+		this._options = {
+			...this._options,
+			...options,
+		};
 	}
 
 	public getCsrfToken(
@@ -294,7 +302,10 @@ export default class HTTPClient<T extends string = string> {
 
 		if (
 			(!request.credentials || request.credentials?.type === "cookies") &&
-			this._options.hbaClient
+			this._options.hbaClient &&
+			!this._options.disallowedHBAAccountTokens?.includes(
+				request.accountToken || DEFAULT_ACCOUNT_TOKEN,
+			)
 		) {
 			const hbaHeaders = await this._options.hbaClient.generateBaseHeaders(
 				request.url,
