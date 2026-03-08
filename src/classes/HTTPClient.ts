@@ -182,7 +182,10 @@ export type HTTPClientConstructorOptions<T extends string> = {
 		response: HTTPResponse,
 		message: string,
 	) => void;
-	onCookiesUpdated?: (accountToken: string | number, cookies: Cookie[]) => void;
+	onCookiesUpdated?: (
+		accountToken: string | number,
+		cookies: Cookie[],
+	) => undefined | false;
 };
 
 export default class HTTPClient<T extends string = string> {
@@ -550,13 +553,17 @@ export default class HTTPClient<T extends string = string> {
 		if (cookieJar && !request.skipCheckingSetCookie) {
 			const url = new URL(response.url);
 			const cookies = cookieJar.parseSetCookieHeaders(response.headers, url);
-			if (this._options.onCookiesUpdated)
-				this._options.onCookiesUpdated(
-					request.accountToken ?? DEFAULT_ACCOUNT_TOKEN,
-					cookies,
-				);
 
-			if (request.skipAddingCookies) cookieJar.addCookies(cookies, url);
+			let shouldSkip = false;
+			if (this._options.onCookiesUpdated)
+				shouldSkip =
+					this._options.onCookiesUpdated(
+						request.accountToken ?? DEFAULT_ACCOUNT_TOKEN,
+						cookies,
+					) === false;
+
+			if (!shouldSkip && !request.skipAddingCookies)
+				cookieJar.addCookies(cookies, url);
 		}
 
 		return await HTTPResponse.init<U, T>(
