@@ -218,6 +218,24 @@ export default class HTTPClient<T extends string = string> {
 		if (this._options.jars) this.jars = this._options.jars;
 	}
 
+	public getUserAgent(requestOverridePlatformType?: T): string | null {
+		const overridePlatformType =
+			requestOverridePlatformType || this._options.defaultOverridePlatformType;
+		if (overridePlatformType) {
+			if (
+				this._options.overridePlatformTypeToUserAgent &&
+				!this._options.overridePlatformTypeSearchParam
+			) {
+				const userAgent =
+					this._options.overridePlatformTypeToUserAgent[overridePlatformType];
+
+				if (userAgent) return userAgent;
+			}
+		}
+
+		return null;
+	}
+
 	public getCsrfToken(
 		authorized = false,
 		accountToken: string | number = DEFAULT_ACCOUNT_TOKEN,
