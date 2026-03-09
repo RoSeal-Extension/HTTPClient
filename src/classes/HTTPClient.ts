@@ -299,7 +299,10 @@ export default class HTTPClient<T extends string = string> {
 				!this._options.overridePlatformTypeSearchParam &&
 				!newHeaders.has(USER_AGENT_HEADER_NAME)
 			) {
-				newHeaders.set(USER_AGENT_HEADER_NAME, overridePlatformType);
+				const userAgent =
+					this._options.overridePlatformTypeToUserAgent[overridePlatformType];
+
+				if (userAgent) newHeaders.set(USER_AGENT_HEADER_NAME, userAgent);
 			}
 		} else if (
 			this._options.trackingUserAgent &&
