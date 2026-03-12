@@ -165,6 +165,7 @@ export type HTTPClientConstructorOptions<T extends string> = {
 	bypassCORSFetch?: (typeof globalThis)["fetch"];
 	camelizeObject?: CamelizeObjectFn;
 
+	defaultAccountToken?: string | number;
 	jars?: Record<string, CookieJar>;
 
 	defaultOverridePlatformType?: T;
@@ -337,12 +338,14 @@ export default class HTTPClient<T extends string = string> {
 				newHeaders.set(COOKIE_HEADER_NAME, cookiesStr);
 		}
 
+		const accountToken =
+			request.accountToken ??
+			this._options.defaultAccountToken ??
+			DEFAULT_ACCOUNT_TOKEN;
 		if (
 			(!request.credentials || request.credentials?.type === "cookies") &&
 			this._options.hbaClient &&
-			!this._options.disallowedHBAAccountTokens?.includes(
-				request.accountToken ?? DEFAULT_ACCOUNT_TOKEN,
-			)
+			!this._options.disallowedHBAAccountTokens?.includes(accountToken)
 		) {
 			const hbaHeaders = await this._options.hbaClient.generateBaseHeaders(
 				request.url,
@@ -397,10 +400,12 @@ export default class HTTPClient<T extends string = string> {
 			);
 		}
 
-		if (request.accountToken && this._options.accountTokenSearchParam) {
+		const accountToken =
+			request.accountToken ?? this._options.defaultAccountToken;
+		if (accountToken && this._options.accountTokenSearchParam) {
 			search.set(
 				this._options.accountTokenSearchParam,
-				request.accountToken.toString(),
+				accountToken.toString(),
 			);
 		}
 
@@ -524,13 +529,16 @@ export default class HTTPClient<T extends string = string> {
 		}
 
 		let cookieJar: CookieJar | undefined;
+		const accountToken =
+			request.accountToken ??
+			this._options.defaultAccountToken ??
+			DEFAULT_ACCOUNT_TOKEN;
 		if (
 			request.credentials?.type === "cookies" &&
 			request.credentials.value === true &&
 			this._options.jars
 		) {
-			cookieJar =
-				this._options.jars[request.accountToken ?? DEFAULT_ACCOUNT_TOKEN];
+			cookieJar = this._options.jars[accountToken];
 		}
 
 		const headers = await this.handleRequestHeaders(
@@ -582,10 +590,7 @@ export default class HTTPClient<T extends string = string> {
 			let shouldSkip = false;
 			if (this._options.onCookiesUpdated)
 				shouldSkip =
-					this._options.onCookiesUpdated(
-						request.accountToken ?? DEFAULT_ACCOUNT_TOKEN,
-						cookies,
-					) === false;
+					this._options.onCookiesUpdated(accountToken, cookies) === false;
 
 			if (!shouldSkip && !request.skipAddingCookies)
 				cookieJar.addCookies(cookies, url);
@@ -632,6 +637,10 @@ export default class HTTPClient<T extends string = string> {
 		const isCookiesRequest =
 			!request.credentials || request.credentials.type === "cookies";
 
+		const accountToken =
+			request.accountToken ??
+			this._options.defaultAccountToken ??
+			DEFAULT_ACCOUNT_TOKEN;
 		// handle regular CSRF tokens
 		if (
 			isCookiesRequest &&
@@ -641,7 +650,7 @@ export default class HTTPClient<T extends string = string> {
 		) {
 			const csrfToken = await this.getCsrfToken(
 				request.credentials?.value as boolean,
-				request.accountToken,
+				accountToken,
 			);
 
 			if (csrfToken) {
@@ -671,7 +680,7 @@ export default class HTTPClient<T extends string = string> {
 				this.setCsrfToken(
 					csrfToken,
 					request.credentials?.value as boolean,
-					request.accountToken,
+					accountToken,
 				);
 				headers.set(CSRF_TOKEN_HEADER_NAME, csrfToken);
 
