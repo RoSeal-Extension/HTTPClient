@@ -53,15 +53,16 @@ export type HTTPMethod =
 	| "DELETE"
 	| "OPTIONS";
 
-export type ExpectContentType =
-	| "json"
-	| "jsonWithBigInts"
-	| "text"
-	| "arrayBuffer"
-	| "blob"
-	| "formData"
-	| "dom"
-	| "none";
+export type HTTPRequestExpectType =
+	| { type: "json" }
+	| { type: "jsonWithBigInts" }
+	| { type: "text" }
+	| { type: "arrayBuffer" }
+	| { type: "blob" }
+	| { type: "formData" }
+	| { type: "dom" }
+	| { type: "protobuf" }
+	| { type: "none" };
 
 export type FormDataSetRequest = {
 	value: string | Blob;
@@ -118,7 +119,7 @@ export type InternalHTTPRequest<T extends string> = {
 	search?: Record<string, unknown> | URLSearchParams;
 	headers?: Record<string, unknown> | Headers;
 	body?: HTTPRequestBodyContent;
-	expect?: ExpectContentType;
+	expect?: HTTPRequestExpectType;
 	ignoreExpect?: boolean;
 	credentials?: HTTPRequestCredentials;
 	camelizeResponse?: boolean;
@@ -352,13 +353,20 @@ export default class HTTPClient<T extends string = string> {
 		}
 
 		if (!newHeaders.has(ACCEPT_CONTENT_TYPE_HEADER_NAME))
-			switch (request.expect) {
+			switch (request.expect?.type) {
 				case "dom": {
 					newHeaders.set(ACCEPT_CONTENT_TYPE_HEADER_NAME, "text/html, */*");
 					break;
 				}
 				case "text": {
 					newHeaders.set(ACCEPT_CONTENT_TYPE_HEADER_NAME, "text/plain, */*");
+					break;
+				}
+				case "protobuf": {
+					newHeaders.set(
+						ACCEPT_CONTENT_TYPE_HEADER_NAME,
+						"application/x-protobuf",
+					);
 					break;
 				}
 				case "json":

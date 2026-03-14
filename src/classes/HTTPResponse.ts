@@ -28,7 +28,8 @@ export class HTTPResponse<T = unknown, U extends string = string> {
 		camelizeObject?: CamelizeObjectFn,
 	): Promise<T> {
 		if (
-			request.ignoreExpect || request.expect === "none" ||
+			request.ignoreExpect ||
+			request.expect?.type === "none" ||
 			response.headers.get("content-length") === "0" ||
 			response.status === 204
 		) {
@@ -39,13 +40,13 @@ export class HTTPResponse<T = unknown, U extends string = string> {
 
 		const clone = response.clone();
 		if (
-			request.expect === "json" ||
+			request.expect?.type === "json" ||
 			!request.expect ||
-			request.expect === "jsonWithBigInts"
+			request.expect?.type === "jsonWithBigInts"
 		) {
 			body = (await clone.text().then((text) => {
 				const trimmed = text.trim();
-				if (request.expect === "jsonWithBigInts") {
+				if (request.expect?.type === "jsonWithBigInts") {
 					return JSONv2.parse(trimmed);
 				}
 				return JSON.parse(trimmed);
@@ -61,14 +62,17 @@ export class HTTPResponse<T = unknown, U extends string = string> {
 			return body as T;
 		}
 
-		if (request.expect === "dom") {
+		if (request.expect.type === "dom") {
 			return new DOMParser().parseFromString(
 				await clone.text(),
 				"text/html",
 			) as T;
 		}
 
-		return clone[request.expect]() as Promise<T>;
+		const type =
+			request.expect.type === "protobuf" ? "arrayBuffer" : request.expect.type;
+
+		return clone[type]() as Promise<T>;
 	}
 
 	public static async init<T, U extends string>(
