@@ -222,16 +222,15 @@ export default class HTTPClient<T extends string = string> {
 	public getUserAgent(requestOverridePlatformType?: T): string | null {
 		const overridePlatformType =
 			requestOverridePlatformType || this._options.defaultOverridePlatformType;
-		if (overridePlatformType) {
-			if (
-				this._options.overridePlatformTypeToUserAgent &&
-				!this._options.overridePlatformTypeSearchParam
-			) {
-				const userAgent =
-					this._options.overridePlatformTypeToUserAgent[overridePlatformType];
+		if (
+			overridePlatformType &&
+			this._options.overridePlatformTypeToUserAgent &&
+			!this._options.overridePlatformTypeSearchParam
+		) {
+			const userAgent =
+				this._options.overridePlatformTypeToUserAgent[overridePlatformType];
 
-				if (userAgent) return userAgent;
-			}
+			if (userAgent) return userAgent;
 		}
 
 		return null;
@@ -310,25 +309,18 @@ export default class HTTPClient<T extends string = string> {
 			}
 		}
 
-		const overridePlatformType =
-			request.overridePlatformType || this._options.defaultOverridePlatformType;
-		if (overridePlatformType) {
-			if (
-				this._options.overridePlatformTypeToUserAgent &&
-				!this._options.overridePlatformTypeSearchParam &&
+		if (!newHeaders.has(USER_AGENT_HEADER_NAME)) {
+			const userAgent = this.getUserAgent(request.overridePlatformType);
+
+			if (userAgent) {
+				newHeaders.set(USER_AGENT_HEADER_NAME, userAgent);
+			} else if (
+				this._options.trackingUserAgent &&
+				!this._options.trackingSearchParam &&
 				!newHeaders.has(USER_AGENT_HEADER_NAME)
 			) {
-				const userAgent =
-					this._options.overridePlatformTypeToUserAgent[overridePlatformType];
-
-				if (userAgent) newHeaders.set(USER_AGENT_HEADER_NAME, userAgent);
+				newHeaders.set(USER_AGENT_HEADER_NAME, this._options.trackingUserAgent);
 			}
-		} else if (
-			this._options.trackingUserAgent &&
-			!this._options.trackingSearchParam &&
-			!newHeaders.has(USER_AGENT_HEADER_NAME)
-		) {
-			newHeaders.set(USER_AGENT_HEADER_NAME, this._options.trackingUserAgent);
 		}
 
 		if (cookieJar) {
