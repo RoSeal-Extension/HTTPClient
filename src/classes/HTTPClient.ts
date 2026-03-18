@@ -35,15 +35,13 @@ import {
 	HTTPResponse,
 } from "./HTTPResponse.ts";
 import { RESTError } from "./RESTError.ts";
-import {
-	parseSetCookieHeaders,
-	type Cookie,
-	type CookieJar,
-} from "./CookieJar.ts";
+import { CookieJar, parseSetCookieHeaders, type Cookie } from "./CookieJar.ts";
 
 export type BareHBAClient = {
 	generateBaseHeaders: HBAClient["generateBaseHeaders"];
 };
+
+export type AccountTokenType = string | number | bigint;
 
 export type HTTPMethod =
 	| "GET"
@@ -125,7 +123,7 @@ export type InternalHTTPRequest<T extends string> = {
 	camelizeResponse?: boolean;
 	cache?: RequestCache;
 	bypassCORS?: boolean;
-	accountToken?: string | number;
+	accountToken?: AccountTokenType;
 	overridePlatformType?: T;
 	signal?: AbortSignal;
 	redirect?: RequestRedirect;
@@ -158,7 +156,7 @@ export type HTTPClientDomains = {
 export type HTTPClientConstructorOptions<T extends string> = {
 	domains: HTTPClientDomains;
 
-	disallowedHBAAccountTokens?: (string | number)[];
+	disallowedHBAAccountTokens?: AccountTokenType[];
 	hbaClient?: BareHBAClient;
 	onWebsite?: boolean;
 
@@ -166,8 +164,9 @@ export type HTTPClientConstructorOptions<T extends string> = {
 	bypassCORSFetch?: (typeof globalThis)["fetch"];
 	camelizeObject?: CamelizeObjectFn;
 
-	defaultAccountToken?: string | number;
-	jars?: Record<string, CookieJar>;
+	defaultAccountToken?: AccountTokenType;
+
+	jars?: Map<AccountTokenType, CookieJar>;
 
 	defaultOverridePlatformType?: T;
 	overridePlatformTypeSearchParam?: string;
@@ -189,7 +188,7 @@ export type HTTPClientConstructorOptions<T extends string> = {
 		message: string,
 	) => void;
 	onCookiesUpdated?: (
-		accountToken: string | number,
+		accountToken: AccountTokenType,
 		cookies: Cookie[],
 	) => undefined | false;
 };
@@ -197,12 +196,12 @@ export type HTTPClientConstructorOptions<T extends string> = {
 export default class HTTPClient<T extends string = string> {
 	private _options: HTTPClientConstructorOptions<T>;
 
-	public jars: Record<string | number, CookieJar> | undefined;
+	public jars: Map<AccountTokenType, CookieJar> | undefined;
 	public csrfTokens: {
-		accounts: Record<string, MaybePromise<string | undefined>>;
+		accounts: Map<AccountTokenType, MaybePromise<string | undefined>>;
 		ip: MaybePromise<string | undefined>;
 	} = {
-		accounts: {},
+		accounts: new Map(),
 		ip: undefined,
 	};
 
@@ -239,11 +238,11 @@ export default class HTTPClient<T extends string = string> {
 
 	public getCsrfToken(
 		authorized = false,
-		accountToken: string | number = DEFAULT_ACCOUNT_TOKEN,
+		accountToken: AccountTokenType = DEFAULT_ACCOUNT_TOKEN,
 	): MaybePromise<string | undefined> {
 		let token: MaybePromise<string | undefined>;
 		if (authorized) {
-			token = this.csrfTokens.accounts[accountToken];
+			token = this.csrfTokens.accounts.get(accountToken);
 		} else {
 			token = this.csrfTokens.ip;
 		}
@@ -266,10 +265,10 @@ export default class HTTPClient<T extends string = string> {
 	public setCsrfToken(
 		value: MaybePromise<string | undefined>,
 		authorized?: boolean,
-		accountToken: string | number = DEFAULT_ACCOUNT_TOKEN,
+		accountToken: AccountTokenType = DEFAULT_ACCOUNT_TOKEN,
 	) {
 		if (authorized) {
-			this.csrfTokens.accounts[accountToken] = value;
+			this.csrfTokens.accounts.set(accountToken, value);
 		}
 
 		this.csrfTokens.ip = value;
@@ -538,7 +537,7 @@ export default class HTTPClient<T extends string = string> {
 			request.credentials.value === true &&
 			this._options.jars
 		) {
-			cookieJar = this._options.jars[accountToken];
+			cookieJar = this._options.jars.get(accountToken);
 		}
 
 		const headers = await this.handleRequestHeaders(
@@ -779,6 +778,24 @@ export default class HTTPClient<T extends string = string> {
 				this._options.camelizeObject,
 			);
 		}
+	}
+
+	public addAccountCookieJar(accountToken: AccountTokenType, jar: CookieJar) {
+		this.jars?.set(accountToken, jar);
+	}
+
+	public updateAccountCookieJar(
+		accountToken: AccountTokenType,
+		cookies: Cookie[],
+	) {
+		const jar = this.jars?.get(accountToken);
+		if (jar) {
+			jar.addCookies(cookies);
+		}
+	}
+
+	public deleteAccountCookieJar(accountToken: AccountTokenType) {
+		this.jars?.delete(accountToken);
 	}
 }
 
