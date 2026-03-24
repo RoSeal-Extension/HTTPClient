@@ -35,7 +35,11 @@ import {
 	HTTPResponse,
 } from "./HTTPResponse.ts";
 import { RESTError } from "./RESTError.ts";
-import { CookieJar, parseSetCookieHeaders, type Cookie } from "./CookieJar.ts";
+import {
+	type CookieJar,
+	parseSetCookieHeaders,
+	type Cookie,
+} from "./CookieJar.ts";
 
 export type BareHBAClient = {
 	generateBaseHeaders: HBAClient["generateBaseHeaders"];
@@ -60,6 +64,9 @@ export type HTTPRequestExpectType =
 	| { type: "formData" }
 	| { type: "dom" }
 	| { type: "protobuf" }
+	| {
+			type: "readableStream";
+	  }
 	| { type: "none" };
 
 export type FormDataSetRequest = {

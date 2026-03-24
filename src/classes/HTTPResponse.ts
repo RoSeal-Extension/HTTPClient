@@ -69,6 +69,10 @@ export class HTTPResponse<T = unknown, U extends string = string> {
 			) as T;
 		}
 
+		if (request.expect.type === "readableStream") {
+			return clone.body as T;
+		}
+
 		const type =
 			request.expect.type === "protobuf" ? "arrayBuffer" : request.expect.type;
 
