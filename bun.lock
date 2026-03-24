@@ -7,7 +7,7 @@
       "dependencies": {
         "json-bigint-native": "^1.2.0",
         "parse-roblox-errors": "^1.1.13",
-        "publicsuffix-json": "github:fbraz3/publicsuffix-json#1b8bf5e",
+        "publicsuffix-json": "github:fbraz3/publicsuffix-json#10bba48",
         "roblox-bat": "^0.6.3",
       },
       "devDependencies": {
@@ -46,7 +46,7 @@
 
     "parse-roblox-errors": ["parse-roblox-errors@1.1.13", "", { "dependencies": { "whatwg-mimetype": "5.0.0" } }, "sha512-8et0tsJhteQmxHVP0cRpee7+OPdnR07rS3khmEEQ6tBbII8b7h9V0P1WmuTUQPLUVRXPUWWNYeQmf603BDQ00Q=="],
 
-    "publicsuffix-json": ["publicsuffix-json@github:fbraz3/publicsuffix-json#1b8bf5e", {}, "fbraz3-publicsuffix-json-1b8bf5e", "sha512-PvXcvS+8mF/mMxWbumBUMoMwVRCOQEFrjT5aR8NnMOoa07ZGrpTaz6XZwS6du7N/N/PlCWpqoIfviXrnIDGBLA=="],
+    "publicsuffix-json": ["publicsuffix-json@github:fbraz3/publicsuffix-json#10bba48", {}, "fbraz3-publicsuffix-json-10bba48", "sha512-1OGAhTVSyWxdLgGLzeJKS6eIvNyxsHv4u0gDR7qOcSmgyt/IbgleuWkgtjB9SZMUIm3xP+ROELF2T18w4tvjuA=="],
 
     "roblox-bat": ["roblox-bat@0.6.3", "", {}, "sha512-Yny8OM+OLjDmGY3EtOz6qMn5mvswhBFvPqYvYDrxlDzFQ6TW/2rEF0ozwhbke7Loo+5OW0gzlwG8c0trMkVHiw=="],
 
