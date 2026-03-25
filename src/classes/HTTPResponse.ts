@@ -4,6 +4,7 @@ import type {
 	InternalHTTPRequest,
 	Ratelimit,
 } from "./HTTPClient.tsx";
+import { CONTENT_LENGTH_HEADER_NAME } from "../constants.ts";
 
 export type HTTPResponseStatus = {
 	ok: boolean;
@@ -30,7 +31,7 @@ export class HTTPResponse<T = unknown, U extends string = string> {
 		if (
 			request.ignoreExpect ||
 			request.expect?.type === "none" ||
-			response.headers.get("content-length") === "0" ||
+			response.headers.get(CONTENT_LENGTH_HEADER_NAME) === "0" ||
 			response.status === 204
 		) {
 			return undefined as T;
