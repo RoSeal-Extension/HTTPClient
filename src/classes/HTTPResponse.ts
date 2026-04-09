@@ -1,10 +1,11 @@
 import * as JSONv2 from "json-bigint-native";
+import { CONTENT_LENGTH_HEADER_NAME } from "../constants.ts";
 import type {
 	HTTPRequest,
+	HTTPRequestExpectType,
 	InternalHTTPRequest,
 	Ratelimit,
 } from "./HTTPClient.tsx";
-import { CONTENT_LENGTH_HEADER_NAME } from "../constants.ts";
 
 export type HTTPResponseStatus = {
 	ok: boolean;
@@ -26,11 +27,13 @@ export class HTTPResponse<T = unknown, U extends string = string> {
 	public static async parseBody<T, U extends string>(
 		request: AnyHTTPRequest<U>,
 		response: Response,
+		defaultExpect?: HTTPRequestExpectType,
 		camelizeObject?: CamelizeObjectFn,
 	): Promise<T> {
+		const expect = request.expect ?? defaultExpect;
 		if (
 			request.ignoreExpect ||
-			request.expect?.type === "none" ||
+			expect?.type === "none" ||
 			response.headers.get(CONTENT_LENGTH_HEADER_NAME) === "0" ||
 			response.status === 204
 		) {
@@ -40,10 +43,11 @@ export class HTTPResponse<T = unknown, U extends string = string> {
 		let body: T | undefined;
 
 		const clone = response.clone();
+
 		if (
-			request.expect?.type === "json" ||
-			!request.expect ||
-			request.expect?.type === "jsonWithBigInts"
+			expect?.type === "json" ||
+			!expect ||
+			expect?.type === "jsonWithBigInts"
 		) {
 			body = (await clone.text().then((text) => {
 				const trimmed = text.trim();
@@ -63,19 +67,18 @@ export class HTTPResponse<T = unknown, U extends string = string> {
 			return body as T;
 		}
 
-		if (request.expect.type === "dom") {
+		if (expect.type === "dom") {
 			return new DOMParser().parseFromString(
 				await clone.text(),
 				"text/html",
 			) as T;
 		}
 
-		if (request.expect.type === "readableStream") {
+		if (expect.type === "readableStream") {
 			return clone.body as T;
 		}
 
-		const type =
-			request.expect.type === "protobuf" ? "arrayBuffer" : request.expect.type;
+		const type = expect.type === "protobuf" ? "arrayBuffer" : expect.type;
 
 		return clone[type]() as Promise<T>;
 	}
@@ -83,12 +86,14 @@ export class HTTPResponse<T = unknown, U extends string = string> {
 	public static async init<T, U extends string>(
 		request: AnyHTTPRequest<U>,
 		response: Response,
+		defaultExpect?: HTTPRequestExpectType,
 		ratelimit?: Ratelimit,
 		camelizeObject?: CamelizeObjectFn,
 	): Promise<HTTPResponse<T>> {
 		const body = await HTTPResponse.parseBody<T, U>(
 			request,
 			response,
+			defaultExpect,
 			camelizeObject,
 		);
 

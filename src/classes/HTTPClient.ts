@@ -173,6 +173,7 @@ export type HTTPClientConstructorOptions<T extends string> = {
 	camelizeObject?: CamelizeObjectFn;
 
 	defaultAccountToken?: AccountTokenType;
+	defaultExpect?: HTTPRequestExpectType;
 
 	jars?: Map<AccountTokenType, CookieJar>;
 
@@ -606,7 +607,8 @@ export default class HTTPClient<T extends string = string> {
 
 		return await HTTPResponse.init<U, T>(
 			request,
-			response as Response,
+			response,
+			this._options.defaultExpect,
 			undefined,
 			this._options.camelizeObject,
 		);
@@ -787,6 +789,7 @@ export default class HTTPClient<T extends string = string> {
 			return HTTPResponse.init<U, T>(
 				request,
 				response._response,
+				this._options.defaultExpect,
 				ratelimitHeaders,
 				this._options.camelizeObject,
 			);
