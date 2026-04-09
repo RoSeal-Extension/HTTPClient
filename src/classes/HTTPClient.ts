@@ -206,6 +206,7 @@ export type HTTPClientConstructorOptions<T extends string> = {
 export default class HTTPClient<T extends string = string> {
 	private _options: HTTPClientConstructorOptions<T>;
 
+	public disallowedHBAAccountTokens: AccountTokenType[] = [];
 	public jars: Map<AccountTokenType, CookieJar> | undefined;
 	public csrfTokens: {
 		accounts: Map<AccountTokenType, MaybePromise<string | undefined>>;
@@ -218,6 +219,9 @@ export default class HTTPClient<T extends string = string> {
 	constructor(options: HTTPClientConstructorOptions<T>) {
 		this._options = options;
 		this.jars = options.jars;
+
+		if (options.disallowedHBAAccountTokens)
+			this.disallowedHBAAccountTokens = options.disallowedHBAAccountTokens;
 	}
 
 	public updateOptions(options: Partial<HTTPClientConstructorOptions<T>>) {
@@ -347,7 +351,7 @@ export default class HTTPClient<T extends string = string> {
 		if (
 			(!request.credentials || request.credentials?.type === "cookies") &&
 			this._options.hbaClient &&
-			!this._options.disallowedHBAAccountTokens?.includes(accountToken)
+			!this.disallowedHBAAccountTokens?.includes(accountToken)
 		) {
 			const hbaHeaders = await this._options.hbaClient.generateBaseHeaders(
 				request.url,
