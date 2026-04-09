@@ -20,9 +20,11 @@ import {
 	DEFAULT_ACCOUNT_TOKEN,
 	INTERNAL_API_KEY_HEADER_NAME,
 	OAUTH_AUTHORIZATION_HEADER_NAME,
+	ORIGIN_HEADER_NAME,
 	RATELIMIT_LIMIT_HEADER,
 	RATELIMIT_REMAINING_HEADER,
 	RATELIMIT_RESET_HEADER,
+	REFERER_HEADER_NAME,
 	REMOVE_PROTOCOL_REGEX,
 	RETRY_ERROR_CODES,
 	ROBLOX_DEPRECATION_MESSAGE_HEADER_NAME,
@@ -174,6 +176,8 @@ export type HTTPClientConstructorOptions<T extends string> = {
 
 	defaultAccountToken?: AccountTokenType;
 	defaultExpect?: HTTPRequestExpectType;
+	defaultOrigin?: string;
+	defaultReferer?: string;
 
 	jars?: Map<AccountTokenType, CookieJar>;
 
@@ -323,6 +327,14 @@ export default class HTTPClient<T extends string = string> {
 					break;
 				}
 			}
+		}
+
+		if (!newHeaders.has(ORIGIN_HEADER_NAME) && this._options.defaultOrigin) {
+			newHeaders.set(ORIGIN_HEADER_NAME, this._options.defaultOrigin);
+		}
+
+		if (!newHeaders.has(REFERER_HEADER_NAME) && this._options.defaultReferer) {
+			newHeaders.set(REFERER_HEADER_NAME, this._options.defaultReferer);
 		}
 
 		if (!newHeaders.has(USER_AGENT_HEADER_NAME)) {

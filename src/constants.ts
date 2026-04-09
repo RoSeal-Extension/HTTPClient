@@ -13,6 +13,8 @@ export const ROBLOX_DEPRECATION_MESSAGE_HEADER_NAME =
 
 export const SET_COOKIE_HEADER_NAME = "set-cookie";
 export const COOKIE_HEADER_NAME = "cookie";
+export const REFERER_HEADER_NAME = "referer";
+export const ORIGIN_HEADER_NAME = "origin";
 export const CONTENT_LENGTH_HEADER_NAME = "content-length";
 
 export const RATELIMIT_LIMIT_HEADER = "x-ratelimit-limit";
