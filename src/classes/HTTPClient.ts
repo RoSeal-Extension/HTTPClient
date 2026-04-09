@@ -152,6 +152,7 @@ export type HTTPRequest<T extends string> = InternalHTTPRequest<T> & {
 	errorHandling?: "BEDEV1" | "BEDEV2" | "none";
 	handleChallenge?: (
 		challenge: ParsedChallenge,
+		request: InternalHTTPRequest<T>,
 	) => MaybePromise<ParsedChallenge | undefined>;
 };
 
@@ -188,6 +189,7 @@ export type HTTPClientConstructorOptions<T extends string> = {
 
 	handleChallenge?: (
 		challenge: ParsedChallenge,
+		request: InternalHTTPRequest<T>,
 	) => MaybePromise<ParsedChallenge | undefined>;
 	onDeprecationMessage?: (
 		request: HTTPRequest<T>,
@@ -666,12 +668,13 @@ export default class HTTPClient<T extends string = string> {
 
 		let retries = request.retries;
 		while (true) {
-			const response = await this._httpRequest<void>({
+			const newRequest = {
 				...request,
 				url: url.toString(),
 				ignoreExpect: true,
 				headers,
-			});
+			};
+			const response = await this._httpRequest<void>(newRequest);
 
 			if (
 				isCookiesRequest &&
@@ -717,7 +720,10 @@ export default class HTTPClient<T extends string = string> {
 				const parsedChallenge = parseChallengeHeaders(response.headers);
 
 				if (parsedChallenge) {
-					const newChallenge = await handleChallenge(parsedChallenge);
+					const newChallenge = await handleChallenge(
+						parsedChallenge,
+						newRequest,
+					);
 					if (newChallenge) {
 						headers.set(
 							GENERIC_CHALLENGE_TYPE_HEADER,
