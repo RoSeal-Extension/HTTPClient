@@ -21,8 +21,8 @@
   },
   "dependencies": {
     "json-bigint-native": "^1.2.0",
-    "parse-roblox-errors": "^1.1.13",
-    "publicsuffix-json": "github:fbraz3/publicsuffix-json#10bba48",
+    "parse-roblox-errors": "^1.2.0",
+    "publicsuffix-json": "github:fbraz3/publicsuffix-json#1217edb",
     "roblox-bat": "^0.6.3"
   }
 }
